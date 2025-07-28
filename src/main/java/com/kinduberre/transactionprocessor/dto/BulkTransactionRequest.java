@@ -19,4 +19,7 @@ public class BulkTransactionRequest {
     public BulkTransactionRequest(List<String> messages) {
         this.messages = messages;
     }
+
+
+
 }

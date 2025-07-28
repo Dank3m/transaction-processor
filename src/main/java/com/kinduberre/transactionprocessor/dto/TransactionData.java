@@ -39,9 +39,6 @@ public class TransactionData {
     private Object sender;
     private String merchant;
 
-    @JsonProperty("additional_info")
-    private Object additionalInfo;
-
     @NoArgsConstructor
     @AllArgsConstructor
     @Data

@@ -24,4 +24,6 @@ public class ProcessingResponse {
         this.totalMessages = transactions.size();
         this.successfullyProcessed = transactions.size();
     }
+
+
 }

@@ -67,7 +67,7 @@ public class LLMService {
 
         Map<String, Object> requestBody = Map.of(
                 "model", model,
-                "max_tokens", maxTokens,
+                "max_completion_tokens", maxTokens,
                 "messages", List.of(
                         Map.of("role", "user", "content", prompt)
                 )
@@ -82,6 +82,8 @@ public class LLMService {
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
+            logger.info("LLM API response received successfully: {}", response);
+
 
             return parseResponse(response);
 
@@ -98,7 +100,49 @@ public class LLMService {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Please extract and structure the following M-PESA transaction messages into JSON format. ");
         prompt.append("Each transaction should include transaction_id, status, type, amount, date, time, balance, costs, and any recipient/sender information. ");
-        prompt.append("Return the result as a JSON array of transaction objects. ");
+        prompt.append("Return the result as a JSON array of transaction objects. In this format:" +
+                "{\n" +
+                "  \"transaction_id\": \"string\",\n" +
+                "  \"type\": \"send_money | receive_money | merchant_payment | internal_transfer | bank_transfer | paybill | business_payment | bank_to_mpesa\",\n" +
+                "  \"status\": \"Confirmed | Pending | Failed\",\n" +
+                "  \"amount\": {\n" +
+                "    \"value\": 0.00,\n" +
+                "    \"currency\": \"KSH\"\n" +
+                "  },\n" +
+                "  \"participant\": {\n" +
+                "    \"type\": \"individual | merchant | bank | business | service_provider | internal_account\",\n" +
+                "    \"name\": \"string | null\",\n" +
+                "    \"account_number\": \"string | null\",\n" +
+                "    \"phone\": \"string | null\"\n" +
+                "  },\n" +
+                "  \"direction\": \"incoming | outgoing\",\n" +
+                "  \"date\": \"DD/MM/YY\",\n" +
+                "  \"time\": \"HH:MM AM/PM\",\n" +
+                "  \"balance_after\": {\n" +
+                "    \"value\": 0.00,\n" +
+                "    \"currency\": \"KSH\"\n" +
+                "  },\n" +
+                "  \"transaction_cost\": {\n" +
+                "    \"value\": 0.00,\n" +
+                "    \"currency\": \"KSH\"\n" +
+                "  },\n" +
+                "  \"daily_limit_remaining\": {\n" +
+                "    \"value\": 0.00,\n" +
+                "    \"currency\": \"KSH\"\n" +
+                "  },\n" +
+                "  \"additional_info\": {\n" +
+                "    \"service_type\": \"string | null\",\n" +
+                "    \"transaction_nature\": \"string | null\",\n" +
+                "    \"transfer_method\": \"string | null\",\n" +
+                "    \"mshwari_balance_after\": {\n" +
+                "      \"value\": 0.00,\n" +
+                "      \"currency\": \"KSH\"\n" +
+                "    },\n" +
+                "    \"notes\": \"string | null\",\n" +
+                "    \"app_link\": \"string | null\",\n" +
+                "    \"recommendation\": \"string | null\"\n" +
+                "  }\n" +
+                "}");
         prompt.append("Here are the messages:\n\n");
 
         for (int i = 0; i < messages.size(); i++) {
@@ -114,7 +158,7 @@ public class LLMService {
         try {
             // Extract JSON from the response (assuming it's wrapped in a response object)
             Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-            String content = (String) ((Map<String, Object>) ((List<?>) responseMap.get("content")).get(0)).get("text");
+            String content = (String) ((Map<String, Object>) ((List<?>) responseMap.get("choices")).get(0)).get("text");
 
             // Parse the JSON array of transactions
             return objectMapper.readValue(content, new TypeReference<List<TransactionData>>() {});
